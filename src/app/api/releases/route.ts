@@ -4,6 +4,9 @@ import { releasePackageSchema, validateRequiredSections } from '@/lib/validation
 import { computeItemFingerprint, computeQAFingerprint, computePackageFingerprint } from '@/lib/fingerprint';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const timer = logger.startTimer('listReleases');
   try {
@@ -91,7 +94,14 @@ export async function GET() {
     });
 
     timer.end('SUCCESS', { count: data.length });
-    return NextResponse.json({ releases: data });
+    return NextResponse.json(
+      { releases: data },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err) {
     timer.end('FAILED', {}, err);
     return NextResponse.json(

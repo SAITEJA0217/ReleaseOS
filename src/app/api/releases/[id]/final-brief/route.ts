@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import { FinalReviewedBrief } from '@/types';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
