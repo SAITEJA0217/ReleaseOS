@@ -48,7 +48,7 @@ export async function GET(
       return NextResponse.json({ error: 'Release not found' }, { status: 404 });
     }
 
-    const currentVersionRecord = release.versions.find((v) => v.version === release.currentVersion) || release.versions[0];
+    const currentVersionRecord = release.versions.find((v: any) => v.version === release.currentVersion) || release.versions[0];
     const latestBrief = release.generatedBriefs[0];
 
     // Check missing sections
@@ -56,9 +56,9 @@ export async function GET(
       ? validateRequiredSections({
           name: release.name,
           version: currentVersionRecord.version,
-          features: currentVersionRecord.items.filter((i) => i.category === 'FEATURE'),
-          bugFixes: currentVersionRecord.items.filter((i) => i.category === 'BUG_FIX'),
-          changedBehavior: currentVersionRecord.items.filter((i) => i.category === 'CHANGED_BEHAVIOR'),
+          features: currentVersionRecord.items.filter((i: any) => i.category === 'FEATURE'),
+          bugFixes: currentVersionRecord.items.filter((i: any) => i.category === 'BUG_FIX'),
+          changedBehavior: currentVersionRecord.items.filter((i: any) => i.category === 'CHANGED_BEHAVIOR'),
           qaEvidence: currentVersionRecord.qaEvidence,
           knownLimitations: currentVersionRecord.limitations,
           migrationNotes: currentVersionRecord.migrationNotes,
@@ -76,7 +76,7 @@ export async function GET(
           stakeholderSummary: latestBrief.stakeholderSummary,
           diagnosticLogs: JSON.parse(latestBrief.diagnosticLogs || '{}'),
           createdAt: latestBrief.createdAt,
-          statements: latestBrief.statements.map((stmt) => {
+          statements: latestBrief.statements.map((stmt: any) => {
             const latestDecision = stmt.reviewDecisions[0];
             const currentStatus = latestDecision
               ? (latestDecision.decision as 'APPROVED' | 'REJECTED' | 'EDITED' | 'REOPENED')
@@ -87,10 +87,10 @@ export async function GET(
               : stmt.statementText;
 
             // Augment evidence references with actual current item data if available
-            const itemMap = new Map(currentVersionRecord?.items.map((i) => [i.id, i]) || []);
-            const qaMap = new Map(currentVersionRecord?.qaEvidence.map((q) => [q.id, q]) || []);
+            const itemMap = new Map<string, any>(currentVersionRecord?.items.map((i: any) => [i.id, i]) || []);
+            const qaMap = new Map<string, any>(currentVersionRecord?.qaEvidence.map((q: any) => [q.id, q]) || []);
 
-            const enrichedReferences = stmt.evidenceReferences.map((ref) => {
+            const enrichedReferences = stmt.evidenceReferences.map((ref: any) => {
               const item = itemMap.get(ref.sourceId);
               const qa = qaMap.get(ref.sourceId);
 
@@ -133,7 +133,7 @@ export async function GET(
               sourceItemIds: JSON.parse(stmt.sourceItemIds || '[]'),
               currentStatus,
               evidenceReferences: enrichedReferences,
-              reviewDecisions: stmt.reviewDecisions.map((d) => ({
+              reviewDecisions: stmt.reviewDecisions.map((d: any) => ({
                 id: d.id,
                 decision: d.decision,
                 reviewer: d.reviewer,
@@ -166,13 +166,13 @@ export async function GET(
               affectedUserGroups: currentVersionRecord.affectedUserGroups,
               contentFingerprint: currentVersionRecord.contentFingerprint,
               createdAt: currentVersionRecord.createdAt,
-              features: currentVersionRecord.items.filter((i) => i.category === 'FEATURE'),
-              bugFixes: currentVersionRecord.items.filter((i) => i.category === 'BUG_FIX'),
-              changedBehavior: currentVersionRecord.items.filter((i) => i.category === 'CHANGED_BEHAVIOR'),
+              features: currentVersionRecord.items.filter((i: any) => i.category === 'FEATURE'),
+              bugFixes: currentVersionRecord.items.filter((i: any) => i.category === 'BUG_FIX'),
+              changedBehavior: currentVersionRecord.items.filter((i: any) => i.category === 'CHANGED_BEHAVIOR'),
               qaEvidence: currentVersionRecord.qaEvidence,
             }
           : null,
-        versionsList: release.versions.map((v) => ({
+        versionsList: release.versions.map((v: any) => ({
           id: v.id,
           version: v.version,
           name: v.name,
@@ -181,7 +181,7 @@ export async function GET(
           qaCount: v.qaEvidence.length,
         })),
         brief: formattedBrief,
-        auditEvents: release.auditEvents.map((a) => ({
+        auditEvents: release.auditEvents.map((a: any) => ({
           id: a.id,
           action: a.action,
           actor: a.actor,
@@ -241,7 +241,7 @@ export async function PUT(
 
     const packageFingerprint = computePackageFingerprint(pkg);
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.release.update({
         where: { id },
         data: {
@@ -338,7 +338,7 @@ export async function PUT(
         }
 
         const staleChecks = detectStaleStatements(
-          latestBrief.statements.map((s) => ({
+          latestBrief.statements.map((s: any) => ({
             id: s.id,
             statementText: s.statementText,
             sourceItemIds: JSON.parse(s.sourceItemIds || '[]'),
