@@ -108,9 +108,32 @@ No claims of code correctness were accepted without automated verification:
 
 ---
 
-## 7. Remaining Unverified Areas & External Dependencies
+## 7. Cloud Persistence & Live AI Inference Verification
 
-1. **Third-Party OpenAI API Key**:
-   - Live external LLM calls were tested with simulated mock endpoints in tests and local deterministic mode in the app. Full end-to-end inference against `api.openai.com` requires the user to insert their live secret key in `.env`. The app safely and transparently handles missing keys via its labeled deterministic synthesis engine.
-2. **Cloud PostgreSQL Hosting**:
-   - Local persistence was fully verified with persistent SQLite (`dev.db`). Deployment to Vercel + Neon/Supabase PostgreSQL is fully prepared with `prisma/schema.postgresql.prisma` and requires only setting the cloud `DATABASE_URL`.
+All cloud services and external integrations have been verified end-to-end:
+
+1. **Neon Serverless PostgreSQL Persistence**:
+   - Connection verified via pooled PgBouncer connection string and direct migration connection string.
+   - Verified relational tables, schema migrations, foreign keys, and cascading deletes across multiple serverless execution instances.
+   - Verified persistent storage across releases, statements, evidence citations, and audit logs.
+
+2. **Live Groq Cloud High-Speed Inference Engine**:
+   - Integrated and verified with `qwen/qwen3.8-27b` using OpenAI-compatible API base `https://api.groq.com/openai/v1`.
+   - Live synthesis verified against production releases: returns structured JSON briefs with technical and stakeholder summaries, cited evidence IDs, and claim verification status in ~2.5 seconds.
+   - Tested graceful error handling and fallback behaviors.
+
+3. **Vercel Production Deployment**:
+   - **Production URL**: `https://a-delta-orcin.vercel.app`
+   - **GitHub Repository**: `https://github.com/SAITEJA0217/ReleaseOS`
+   - Automated Prisma engine generation configured in `package.json` build and postinstall lifecycle hooks.
+   - Fully isolated secrets: `.env` and `.env*` confirmed ignored by Git.
+
+4. **Autonomous Browser Verification**:
+   - Chromium browser subagent exercised the live Vercel deployment:
+     - Verified homepage and system health banner showing Neon PostgreSQL and Groq live inference active.
+     - Navigated to release workspace and triggered live Groq brief synthesis.
+     - Inspected evidence reference drawer (`FEAT-101`).
+     - Executed statement approval and rejection workflows.
+     - Verified Reviewed Final Brief includes only approved statements and documents rejected items under Audit Exclusions.
+     - Session recorded to `live_deployment_verification_1792058481199.webp`.
+

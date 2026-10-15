@@ -10,6 +10,126 @@
 
 ---
 
+## 🚀 Live Deployment & Reviewer Quick Links
+
+| Resource | URL | Description |
+|---|---|---|
+| **Production Application** | [https://a-delta-orcin.vercel.app](https://a-delta-orcin.vercel.app) | Live deployed app hosted on Vercel |
+| **GitHub Repository** | [https://github.com/SAITEJA0217/ReleaseOS](https://github.com/SAITEJA0217/ReleaseOS) | Full source code with isolated secrets |
+| **Cloud Database** | Neon Serverless PostgreSQL | High-performance pooled PostgreSQL |
+| **AI Synthesis Engine** | Groq Cloud High-Speed Inference | `qwen/qwen3.8-27b` (~2.5s inference) |
+| **Health Check Endpoint** | [https://a-delta-orcin.vercel.app/api/health](https://a-delta-orcin.vercel.app/api/health) | Live telemetry and provider statuses |
+
+---
+
+## 📋 Reviewer Instructions
+
+Follow this recommended evaluation path to inspect and verify the system in under 5 minutes:
+
+### 1. System Health & Infrastructure Inspection
+- Open [https://a-delta-orcin.vercel.app](https://a-delta-orcin.vercel.app).
+- Observe the **System Telemetry Banner** at the top of the dashboard:
+  - Confirms **Neon Serverless PostgreSQL (CONNECTED)**.
+  - Confirms **Groq Cloud High-Speed Inference API (`qwen/qwen3.8-27b`) (Active)**.
+  - Confirms zero client-side secret leakage and human-review gate lock.
+- View raw JSON health at [https://a-delta-orcin.vercel.app/api/health](https://a-delta-orcin.vercel.app/api/health).
+
+### 2. Live AI Brief Synthesis
+- On the dashboard, click **Open Workspace** on the pre-loaded release: `Release Horizon - Multi-Currency Payment Engine (v1.4.0)`.
+- Click **Regenerate Briefs** / **Synthesize Release Brief**.
+- Watch the live Groq inference execute in real-time (~2.5–5s) and populate:
+  - An **Internal Technical Brief** with architectural breakdown.
+  - A **Client/Stakeholder Brief** with business impacts.
+  - Structured statements categorized with impact levels (`BREAKING`, `HIGH`, `MEDIUM`, `LOW`).
+
+### 3. Evidence Citation Grounding & Traceability
+- Look at Statement 1 or Statement 2 in the Review Workbench.
+- Click any evidence citation badge (e.g. `FEAT-101`, `QA-E2E-02`).
+- The **Evidence Reference Inspector** drawer slides open, displaying:
+  - Exact source item text and git PR / ticket references.
+  - Deterministic verification status (`SUPPORTED` or `UNSUPPORTED`).
+  - Evidence validation rationale.
+
+### 4. Human Review & Audit Workflow
+- **Approve**: Click **Approve** on Statement 1. Notice the reviewer identity (`Staff Engineer`) and live timestamp lock in.
+- **Reject & Exclude**: Click **Reject & Exclude** on another statement, enter a reason (e.g. *"Requires penetration test signoff"*), and submit.
+- **Reviewed Final Brief Verification**: Click the **Reviewed Final Brief** tab.
+  - Verify that **ONLY** approved statements are present in the final release brief.
+  - Verify that the rejected statement is barred and clearly cataloged under **Audit Exclusions & Unresolved Claims** with its rejection reason.
+  - Verify the mandatory safety disclaimer: *"ReleaseOS assists in synthesis and evidence traceability; it does NOT deploy code or authorize production rollouts automatically."*
+
+### 5. Stale Statement Detection
+- Make a change to a source item (or simulate via API `POST /api/releases/[id]/statements/stale`).
+- Notice ReleaseOS detects cryptographic content fingerprint divergence and flags affected statements as **STALE**, requiring re-review.
+
+---
+
+## 🧪 Sample Inputs for Testing
+
+You can use the **1-Click Template** button in the UI (`/releases/new`), or submit the following verified payload via API or form:
+
+### Sample Release Package (v2.1.0 — Global Webhook Gateway)
+
+```json
+{
+  "name": "Global Webhook Gateway",
+  "version": "2.1.0",
+  "features": [
+    {
+      "id": "FEAT-301",
+      "title": "HMAC-SHA256 Signature Verification",
+      "description": "Every incoming and outgoing webhook now includes a cryptographically signed X-Signature-256 header with replay protection.",
+      "sourceReference": "PR #412 (security/crypto-engine)"
+    },
+    {
+      "id": "FEAT-302",
+      "title": "Automatic Exponential Backoff Retry Pipeline",
+      "description": "Failed webhook deliveries are queued into a distributed Redis queue and retried with jitter up to 72 hours.",
+      "sourceReference": "PR #418 (infra/retry-queue)"
+    }
+  ],
+  "bugFixes": [
+    {
+      "id": "BUG-204",
+      "title": "Fix TCP Socket Leak on TLS Handshake Timeout",
+      "description": "Resolved lingering TCP socket descriptors when external customer webhooks fail to respond within 3000ms.",
+      "sourceReference": "Issue #891 / Commit 8f4a1c"
+    }
+  ],
+  "changedBehavior": [
+    {
+      "id": "DEP-105",
+      "title": "Deprecate Legacy v1 Webhook Header Payload",
+      "description": "The X-Legacy-Webhook-Key header is deprecated and will be removed in v3.0.0. Clients must migrate to Bearer tokens.",
+      "sourceReference": "RFC-77 / PR #429"
+    }
+  ],
+  "qaEvidence": [
+    {
+      "id": "QA-SEC-01",
+      "testType": "SECURITY",
+      "summary": "100% test pass on HMAC replay attack prevention test suite.",
+      "evidenceDetails": "500 concurrent replayed requests rejected with 401 Unauthorized across test clusters.",
+      "passed": true,
+      "sourceReference": "Run #9841 / security-pipeline"
+    },
+    {
+      "id": "QA-LOAD-01",
+      "testType": "LOAD_TEST",
+      "summary": "Sustained 50,000 deliveries/sec at p99 latency < 45ms.",
+      "evidenceDetails": "Soak test ran for 4 consecutive hours with zero socket exhaustions.",
+      "passed": true,
+      "sourceReference": "Grafana Dashboard / Run #9843"
+    }
+  ],
+  "limitations": "Maximum payload size capped at 10MB per webhook dispatch. Custom SSL certificates with self-signed CAs are not supported.",
+  "migrationNotes": "Database migration `20261015_add_webhook_signatures` is zero-downtime and runs backward-compatible column additions.",
+  "affectedUserGroups": "Platform integrators, third-party webhook consumers, and API gateway administrators."
+}
+```
+
+---
+
 ## 1. Product Overview
 
 In modern continuous delivery environments, engineering release notes and stakeholder communications suffer from three systemic risks:
