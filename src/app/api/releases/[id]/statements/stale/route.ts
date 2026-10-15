@@ -17,7 +17,6 @@ export async function POST(
       include: {
         versions: {
           orderBy: { createdAt: 'desc' },
-          take: 1,
           include: { items: true, qaEvidence: true },
         },
         generatedBriefs: {
@@ -34,11 +33,18 @@ export async function POST(
       return NextResponse.json({ error: 'Release not found' }, { status: 404 });
     }
 
-    const currentVersion = release.versions[0];
     const latestBrief = release.generatedBriefs[0];
+    if (!latestBrief) {
+      return NextResponse.json({ error: 'No active brief to evaluate' }, { status: 400 });
+    }
 
-    if (!currentVersion || !latestBrief) {
-      return NextResponse.json({ error: 'No active version or brief to evaluate' }, { status: 400 });
+    const currentVersion =
+      release.versions.find((v) => v.id === latestBrief.versionId) ||
+      release.versions.find((v) => v.version === release.currentVersion) ||
+      release.versions[0];
+
+    if (!currentVersion) {
+      return NextResponse.json({ error: 'No active version to evaluate against' }, { status: 400 });
     }
 
     // Map current sources
