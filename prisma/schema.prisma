@@ -1,0 +1,141 @@
+// ReleaseOS Prisma Schema - Local Persistent Database (SQLite)
+// Note: For PostgreSQL deployment (e.g. Vercel + Neon / Supabase), see prisma/schema.postgresql.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Release {
+  id              String           @id @default(cuid())
+  name            String
+  currentVersion  String           @default("1.0.0")
+  status          String           @default("DRAFT") // DRAFT, IN_REVIEW, READY_FOR_APPROVAL, REVIEWED, ARCHIVED
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  versions        ReleaseVersion[]
+  generatedBriefs GeneratedBrief[]
+  auditEvents     AuditEvent[]
+}
+
+model ReleaseVersion {
+  id                   String           @id @default(cuid())
+  releaseId            String
+  version              String
+  name                 String
+  createdAt            DateTime         @default(now())
+  
+  // Package Core Sections
+  limitations          String           @default("")
+  migrationNotes       String           @default("")
+  affectedUserGroups   String           @default("")
+  contentFingerprint   String           // SHA256 of the aggregated package
+
+  release              Release          @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  items                ReleaseItem[]
+  qaEvidence           QAEvidence[]
+  generatedBriefs      GeneratedBrief[]
+
+  @@unique([releaseId, version])
+}
+
+model ReleaseItem {
+  id                 String         @id // Stable identifier (e.g., "FEAT-101", "BUG-202", "CHG-303")
+  versionId          String
+  category           String         // FEATURE, BUG_FIX, CHANGED_BEHAVIOR
+  title              String
+  description        String
+  sourceReference    String         // e.g. "PR #1024", "Jira SEC-402"
+  contentFingerprint String         // SHA256 of title + description
+  orderIndex         Int            @default(0)
+
+  version            ReleaseVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model QAEvidence {
+  id                 String         @id // Stable identifier (e.g., "QA-E2E-01", "QA-LOAD-02")
+  versionId          String
+  testType           String         // "E2E", "Unit", "Load", "Security", "Manual"
+  summary            String
+  evidenceDetails    String
+  passed             Boolean        @default(true)
+  sourceReference    String         // e.g. "CI Run #4819", "Grafana Link"
+  contentFingerprint String
+
+  version            ReleaseVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model GeneratedBrief {
+  id                 String           @id @default(cuid())
+  releaseId          String
+  versionId          String
+  modelUsed          String           @default("demo-rule-engine-v1")
+  generationStatus   String           @default("SUCCESS") // SUCCESS, PARTIAL_WARNINGS, FAILED
+  technicalSummary   String           @default("")
+  stakeholderSummary String           @default("")
+  diagnosticLogs     String           @default("{}") // JSON string of metrics, execution timings, warnings
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  release            Release          @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  version            ReleaseVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  statements         BriefStatement[]
+}
+
+model BriefStatement {
+  id                          String              @id @default(cuid())
+  briefId                     String
+  statementText               String
+  audience                    String              // TECHNICAL or STAKEHOLDER
+  impactCategory              String              @default("LOW") // LOW, MEDIUM, HIGH, BREAKING
+  verificationStatus          String              @default("SUPPORTED") // SUPPORTED, PARTIALLY_SUPPORTED, UNSUPPORTED, UNKNOWN_MISSING_INFO
+  riskWarning                 String?             // Warning message if unsupported or exceeding QA
+  isStale                     Boolean             @default(false)
+  staleReason                 String?
+  sourceItemIds               String              @default("[]") // JSON string array of IDs
+  sourceFingerprintsSnapshot  String              @default("{}") // JSON snapshot of { [sourceId]: hash }
+
+  brief                       GeneratedBrief      @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  evidenceReferences          EvidenceReference[]
+  reviewDecisions             ReviewDecision[]
+}
+
+model EvidenceReference {
+  id            String             @id @default(cuid())
+  statementId   String
+  sourceId      String             // ID of the ReleaseItem or QAEvidence
+  sourceType    String             // RELEASE_ITEM or QA_EVIDENCE
+  excerpt       String             // Supporting text quotation
+  isValid       Boolean            @default(true)
+  invalidReason String?
+
+  statement     BriefStatement     @relation(fields: [statementId], references: [id], onDelete: Cascade)
+}
+
+model ReviewDecision {
+  id          String         @id @default(cuid())
+  statementId String
+  decision    String         // APPROVED, REJECTED, EDITED, REOPENED
+  reviewer    String         @default("Lead Engineer")
+  editedText  String?
+  reviewNotes String?
+  createdAt   DateTime       @default(now())
+
+  statement   BriefStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  releaseId String
+  action    String
+  actor     String   @default("System / User")
+  details   String   @default("{}")
+  timestamp DateTime @default(now())
+
+  release   Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+}
