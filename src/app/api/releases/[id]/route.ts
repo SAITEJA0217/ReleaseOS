@@ -5,6 +5,9 @@ import { computeItemFingerprint, computeQAFingerprint, computePackageFingerprint
 import { detectStaleStatements } from '@/lib/stale';
 import { logger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }

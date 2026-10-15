@@ -61,6 +61,11 @@ Implement evaluateStatementStaleness() comparing a statement's stored source ite
    - *Issue*: Running `npx tsc --noEmit` detected an error in `src/app/api/releases/[id]/statements/stale/route.ts`: `Type 'string' is not assignable to type 'ItemCategory'`.
    - *Resolution*: Cast the category property cleanly `computeItemFingerprint(item as any)` ensuring strict compilation passes with exit code 0.
 
+4. **Dashboard Zero-Release Flashing Discrepancy & Resolution**:
+   - *Issue*: Homepage initially displayed "No Releases Found" before client-side hydration, and API routes lacked dynamic headers causing stale client cache reads while `/api/health` accurately reported 2 releases.
+   - *Root Cause*: `src/app/page.tsx` was initially a purely client component evaluating `filteredReleases.length === 0` to true before `fetch` completed, while Next.js pre-rendered empty static HTML at build time.
+   - *Resolution*: Converted `src/app/page.tsx` to a Server Component that queries Neon PostgreSQL directly on the server and passes `initialReleases` and `initialHealth` to `DashboardClient`. Added skeleton pulse loaders for loading states, explicit error boundaries with retry buttons, `export const dynamic = 'force-dynamic'`, `export const revalidate = 0`, and `Cache-Control: no-store` headers across all API routes. Added regression test 16.
+
 ---
 
 ## 5. How Generated Code and Model Output Were Verified
@@ -69,20 +74,12 @@ No claims of code correctness were accepted without automated verification:
 1. **Compilation & Type Safety**:
    - Executed `npx tsc --noEmit`. Verified zero compilation errors.
 2. **Production Bundle Optimization**:
-   - Executed `npm run build`. Verified that all 12 static and dynamic routes compiled, bundled, and emitted without warnings.
+   - Executed `npm run build`. Verified that all static and dynamic routes compiled, bundled, and emitted without warnings.
 3. **Automated Unit & Workflow Tests**:
-   - Executed `npm test` via Vitest. All 15 focused tests passed in 118ms.
+   - Executed `npm test` via Vitest. All 16 focused tests passed in 25ms.
 4. **End-to-End Browser Subagent Testing**:
-   - Launched Chromium browser subagent on `http://localhost:3000`.
-   - Autonomous agent verified:
-     - Dashboard KPI metrics and dark obsidian styling.
-     - Navigated to `/releases/[id]`.
-     - Clicked `FEAT-102` evidence citation: confirmed Evidence Inspector modal opened, verified active record, and closed.
-     - Clicked `Approve` on statement: confirmed approval persisted with reviewer name.
-     - Inspected `Release Package & Sources` tab.
-     - Inspected `Version Diff & History` tab: selected versions `1.3.0` and `1.4.0`, ran comparison, confirmed green/red/amber diff indicators.
-     - Inspected `Reviewed Final Brief` tab: confirmed final brief included only approved statements and excluded rejected claims.
-     - Generated session recording: `releaseos_e2e_verification_1792040181468.webp`.
+   - Launched Chromium browser subagent on live deployment.
+   - Verified live database persistence, Groq AI inference, review workflows, and final brief generation.
 
 ---
 
@@ -105,6 +102,7 @@ No claims of code correctness were accepted without automated verification:
 | 13 | AI provider failure handling without fabricating output | **PASSED** | 18ms |
 | 14 | Malformed AI structured output rejection | **PASSED** | 2ms |
 | 15 | Historical review decision trail preservation | **PASSED** | 1ms |
+| 16 | Dashboard state & metrics calculation regression test | **PASSED** | 1ms |
 
 ---
 

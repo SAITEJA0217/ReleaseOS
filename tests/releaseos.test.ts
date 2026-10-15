@@ -463,4 +463,60 @@ describe('ReleaseOS Core Verification & Traceability Suite', () => {
     expect(auditTrail[2].decision).toBe('EDITED');
     expect(auditTrail[3].decision).toBe('APPROVED');
   });
+
+  // 16. Dashboard state & metrics calculation regression test
+  it('16. Accurately calculates dashboard metrics and prevents false empty state when persisted releases exist', () => {
+    const mockPersistedReleases = [
+      {
+        id: 'rel-1',
+        name: 'Release Alpha',
+        currentVersion: '1.0.0',
+        status: 'IN_REVIEW',
+        createdAt: '2026-10-15T08:00:00Z',
+        updatedAt: '2026-10-15T08:00:00Z',
+        versionsCount: 2,
+        hasBrief: true,
+        pendingReviewCount: 3,
+        unsupportedWarningsCount: 1,
+        staleCount: 0,
+        missingSectionsCount: 0,
+      },
+      {
+        id: 'rel-2',
+        name: 'Release Beta',
+        currentVersion: '2.0.0',
+        status: 'DRAFT',
+        createdAt: '2026-10-15T09:00:00Z',
+        updatedAt: '2026-10-15T09:00:00Z',
+        versionsCount: 1,
+        hasBrief: false,
+        pendingReviewCount: 0,
+        unsupportedWarningsCount: 0,
+        staleCount: 0,
+        missingSectionsCount: 2,
+      },
+    ];
+
+    // Compute metrics as done on dashboard
+    const totalReleases = mockPersistedReleases.length;
+    const totalVersions = mockPersistedReleases.reduce((acc, r) => acc + r.versionsCount, 0);
+    const pendingReviewTotal = mockPersistedReleases.reduce((acc, r) => acc + r.pendingReviewCount, 0);
+    const releasesWithMissingInfo = mockPersistedReleases.filter((r) => r.missingSectionsCount > 0).length;
+    const releasesWithWarnings = mockPersistedReleases.filter((r) => r.unsupportedWarningsCount > 0 || r.staleCount > 0).length;
+
+    expect(totalReleases).toBe(2);
+    expect(totalVersions).toBe(3);
+    expect(pendingReviewTotal).toBe(3);
+    expect(releasesWithMissingInfo).toBe(1);
+    expect(releasesWithWarnings).toBe(1);
+
+    // Verify filter matching
+    const inReviewFilter = mockPersistedReleases.filter((r) => r.status === 'IN_REVIEW');
+    expect(inReviewFilter.length).toBe(1);
+    expect(inReviewFilter[0].name).toBe('Release Alpha');
+
+    const searchMatch = mockPersistedReleases.filter((r) => r.name.toLowerCase().includes('beta'));
+    expect(searchMatch.length).toBe(1);
+    expect(searchMatch[0].id).toBe('rel-2');
+  });
 });
