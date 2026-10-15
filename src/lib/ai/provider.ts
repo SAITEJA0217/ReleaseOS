@@ -218,8 +218,9 @@ function runDeterministicDemoEngine(pkg: ReleasePackageInput): GeneratedBriefOut
  */
 export async function generateReleaseBriefs(pkg: ReleasePackageInput): Promise<GenerationEngineResult> {
   const timer = logger.startTimer('generateReleaseBriefs');
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const apiKey = process.env.GROQ_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
   const isDemo = process.env.DEMO_MODE === 'true' || !apiKey;
+  const isGroq = Boolean(process.env.GROQ_API_KEY || apiKey?.startsWith('gsk_') || process.env.OPENAI_BASE_URL?.includes('groq'));
 
   // Build lookup maps of existing sources for evidence validation
   const allItems = [
@@ -244,8 +245,11 @@ export async function generateReleaseBriefs(pkg: ReleasePackageInput): Promise<G
   let modelName = 'demo-rule-engine-v1 (Deterministic Local)';
 
   if (!isDemo && apiKey) {
-    modelName = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-    const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+    const defaultModel = isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
+    const defaultBaseUrl = isGroq ? 'https://api.groq.com/openai/v1' : 'https://api.openai.com/v1';
+
+    modelName = process.env.GROQ_MODEL || process.env.OPENAI_MODEL || defaultModel;
+    const baseUrl = process.env.GROQ_BASE_URL || process.env.OPENAI_BASE_URL || defaultBaseUrl;
 
     const systemPrompt = `You are ReleaseOS, a rigorous software release communication and verification intelligence system.
 Your job is to analyze a structured software release package and produce two distinct briefs:
