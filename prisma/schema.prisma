@@ -1,13 +1,14 @@
-// ReleaseOS Prisma Schema - Local Persistent Database (SQLite)
-// Note: For PostgreSQL deployment (e.g. Vercel + Neon / Supabase), see prisma/schema.postgresql.prisma
+// ReleaseOS Prisma Schema - Neon PostgreSQL Production Engine
+// Configured per Neon official skill best practices: pooled DATABASE_URL + unpooled directUrl
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Release {
@@ -21,6 +22,8 @@ model Release {
   versions        ReleaseVersion[]
   generatedBriefs GeneratedBrief[]
   auditEvents     AuditEvent[]
+
+  @@index([status])
 }
 
 model ReleaseVersion {
@@ -30,7 +33,6 @@ model ReleaseVersion {
   name                 String
   createdAt            DateTime         @default(now())
   
-  // Package Core Sections
   limitations          String           @default("")
   migrationNotes       String           @default("")
   affectedUserGroups   String           @default("")
@@ -42,6 +44,7 @@ model ReleaseVersion {
   generatedBriefs      GeneratedBrief[]
 
   @@unique([releaseId, version])
+  @@index([releaseId])
 }
 
 model ReleaseItem {
@@ -55,6 +58,9 @@ model ReleaseItem {
   orderIndex         Int            @default(0)
 
   version            ReleaseVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@index([category])
 }
 
 model QAEvidence {
@@ -68,13 +74,15 @@ model QAEvidence {
   contentFingerprint String
 
   version            ReleaseVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
 }
 
 model GeneratedBrief {
   id                 String           @id @default(cuid())
   releaseId          String
   versionId          String
-  modelUsed          String           @default("demo-rule-engine-v1")
+  modelUsed          String           @default("gpt-4o-mini")
   generationStatus   String           @default("SUCCESS") // SUCCESS, PARTIAL_WARNINGS, FAILED
   technicalSummary   String           @default("")
   stakeholderSummary String           @default("")
@@ -85,6 +93,9 @@ model GeneratedBrief {
   release            Release          @relation(fields: [releaseId], references: [id], onDelete: Cascade)
   version            ReleaseVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
   statements         BriefStatement[]
+
+  @@index([releaseId])
+  @@index([versionId])
 }
 
 model BriefStatement {
@@ -103,6 +114,11 @@ model BriefStatement {
   brief                       GeneratedBrief      @relation(fields: [briefId], references: [id], onDelete: Cascade)
   evidenceReferences          EvidenceReference[]
   reviewDecisions             ReviewDecision[]
+
+  @@index([briefId])
+  @@index([audience])
+  @@index([verificationStatus])
+  @@index([isStale])
 }
 
 model EvidenceReference {
@@ -115,6 +131,9 @@ model EvidenceReference {
   invalidReason String?
 
   statement     BriefStatement     @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@index([statementId])
+  @@index([sourceId])
 }
 
 model ReviewDecision {
@@ -127,6 +146,9 @@ model ReviewDecision {
   createdAt   DateTime       @default(now())
 
   statement   BriefStatement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@index([statementId])
+  @@index([decision])
 }
 
 model AuditEvent {
@@ -138,4 +160,8 @@ model AuditEvent {
   timestamp DateTime @default(now())
 
   release   Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  @@index([releaseId])
+  @@index([action])
+  @@index([timestamp])
 }

@@ -249,7 +249,9 @@ export async function generateReleaseBriefs(pkg: ReleasePackageInput): Promise<G
     const defaultBaseUrl = isGroq ? 'https://api.groq.com/openai/v1' : 'https://api.openai.com/v1';
 
     modelName = process.env.GROQ_MODEL || process.env.OPENAI_MODEL || defaultModel;
-    const baseUrl = process.env.GROQ_BASE_URL || process.env.OPENAI_BASE_URL || defaultBaseUrl;
+    const rawBaseUrl = process.env.GROQ_BASE_URL || process.env.OPENAI_BASE_URL;
+    const cleanedBaseUrl = rawBaseUrl ? (rawBaseUrl.match(/https?:\/\/[^\s)\]'"]+/)?.[0] || rawBaseUrl.trim()) : defaultBaseUrl;
+    const baseUrl = cleanedBaseUrl;
 
     const systemPrompt = `You are ReleaseOS, a rigorous software release communication and verification intelligence system.
 Your job is to analyze a structured software release package and produce two distinct briefs:
@@ -293,7 +295,7 @@ Respond ONLY with valid JSON having the following structure:
 }`;
 
     try {
-      const response = await fetch(`${baseUrl}/chat/completions`, {
+      let response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -309,6 +311,27 @@ Respond ONLY with valid JSON having the following structure:
           ],
         }),
       });
+
+      if (!response.ok && response.status === 404 && isGroq && modelName !== 'qwen/qwen3.8-27b') {
+        logger.info('Model not found on Groq, retrying with available model qwen/qwen3.8-27b');
+        modelName = 'qwen/qwen3.8-27b';
+        response = await fetch(`${baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: modelName,
+            temperature: 0.1,
+            response_format: { type: 'json_object' },
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+          }),
+        });
+      }
 
       if (!response.ok) {
         const errorText = await response.text();

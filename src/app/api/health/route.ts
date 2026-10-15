@@ -29,15 +29,24 @@ export async function GET() {
     ? process.env.GROQ_MODEL || process.env.OPENAI_MODEL || (isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini')
     : 'demo-rule-engine-v1';
 
-  return NextResponse.json({
-    status: dbStatus === 'CONNECTED' ? 'HEALTHY' : 'DEGRADED',
-    timestamp: new Date().toISOString(),
-    database: {
-      provider: 'SQLite / Prisma (ACID Relational Engine: dev.db)',
-      status: dbStatus,
-      releasesCount: releaseCount,
-      error: dbError,
-    },
+    const dbUrl = process.env.DATABASE_URL || '';
+    const isPostgres = dbUrl.startsWith('postgres://') || dbUrl.startsWith('postgresql://');
+    const isNeon = dbUrl.includes('neon.tech');
+    const provider = isNeon 
+      ? 'Neon Serverless PostgreSQL (Prisma ORM)' 
+      : isPostgres 
+      ? 'PostgreSQL (Prisma ORM)' 
+      : 'SQLite (Prisma ORM)';
+
+    return NextResponse.json({
+      status: dbStatus === 'CONNECTED' ? 'HEALTHY' : 'DEGRADED',
+      timestamp: new Date().toISOString(),
+      database: {
+        provider,
+        status: dbStatus,
+        releasesCount: releaseCount,
+        error: dbError,
+      },
     aiEngine: {
       isDemoMode: isDemo,
       provider: providerName,

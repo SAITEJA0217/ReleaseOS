@@ -78,24 +78,18 @@ export async function POST(
     // Run AI Generation with citation grounding
     const generationResult = await generateReleaseBriefs(pkg);
 
-    // Persist in transaction
-    const savedBrief = await prisma.$transaction(async (tx) => {
-      const brief = await tx.generatedBrief.create({
-        data: {
-          releaseId: id,
-          versionId: currentVersionRecord.id,
-          modelUsed: generationResult.modelUsed,
-          generationStatus: generationResult.detectedRisks.length > 0 ? 'PARTIAL_WARNINGS' : 'SUCCESS',
-          technicalSummary: generationResult.technicalSummary,
-          stakeholderSummary: generationResult.stakeholderSummary,
-          diagnosticLogs: JSON.stringify(generationResult.diagnosticLogs),
-        },
-      });
-
-      for (const stmt of generationResult.statements) {
-        const createdStmt = await tx.briefStatement.create({
-          data: {
-            briefId: brief.id,
+    // Persist atomically via Prisma nested write (avoids pooler interactive transaction timeout)
+    const savedBrief = await prisma.generatedBrief.create({
+      data: {
+        releaseId: id,
+        versionId: currentVersionRecord.id,
+        modelUsed: generationResult.modelUsed,
+        generationStatus: generationResult.detectedRisks.length > 0 ? 'PARTIAL_WARNINGS' : 'SUCCESS',
+        technicalSummary: generationResult.technicalSummary,
+        stakeholderSummary: generationResult.stakeholderSummary,
+        diagnosticLogs: JSON.stringify(generationResult.diagnosticLogs),
+        statements: {
+          create: generationResult.statements.map((stmt) => ({
             statementText: stmt.statementText,
             audience: stmt.audience,
             impactCategory: stmt.impactCategory,
@@ -104,42 +98,36 @@ export async function POST(
             isStale: false,
             sourceItemIds: JSON.stringify(stmt.sourceItemIds),
             sourceFingerprintsSnapshot: JSON.stringify(stmt.sourceFingerprintsSnapshot),
-          },
-        });
-
-        for (const ref of stmt.evidenceExcerpts) {
-          await tx.evidenceReference.create({
-            data: {
-              statementId: createdStmt.id,
-              sourceId: ref.sourceId,
-              sourceType: ref.sourceType,
-              excerpt: ref.excerpt,
-              isValid: ref.isValid,
-              invalidReason: ref.invalidReason,
+            evidenceReferences: {
+              create: stmt.evidenceExcerpts.map((ref) => ({
+                sourceId: ref.sourceId,
+                sourceType: ref.sourceType,
+                excerpt: ref.excerpt,
+                isValid: ref.isValid,
+                invalidReason: ref.invalidReason,
+              })),
             },
-          });
-        }
-      }
-
-      await tx.release.update({
-        where: { id },
-        data: { status: 'IN_REVIEW' },
-      });
-
-      await tx.auditEvent.create({
-        data: {
-          releaseId: id,
-          action: 'BRIEF_GENERATED',
-          actor: generationResult.isDemoMode ? 'Demo Synthesizer' : 'AI Model Pipeline',
-          details: JSON.stringify({
-            model: generationResult.modelUsed,
-            isDemo: generationResult.isDemoMode,
-            statementsCount: generationResult.statements.length,
-          }),
+          })),
         },
-      });
+      },
+    });
 
-      return brief;
+    await prisma.release.update({
+      where: { id },
+      data: { status: 'IN_REVIEW' },
+    });
+
+    await prisma.auditEvent.create({
+      data: {
+        releaseId: id,
+        action: 'BRIEF_GENERATED',
+        actor: generationResult.isDemoMode ? 'Demo Synthesizer' : 'AI Model Pipeline',
+        details: JSON.stringify({
+          model: generationResult.modelUsed,
+          isDemo: generationResult.isDemoMode,
+          statementsCount: generationResult.statements.length,
+        }),
+      },
     });
 
     timer.end('SUCCESS', { briefId: savedBrief.id });
