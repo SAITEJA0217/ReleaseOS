@@ -67,7 +67,7 @@ export async function POST(
 
     const packageFingerprint = computePackageFingerprint(pkg);
 
-    const newVersion = await prisma.$transaction(async (tx) => {
+    const newVersion = await prisma.$transaction(async (tx: any) => {
       const versionRecord = await tx.releaseVersion.create({
         data: {
           releaseId: id,
@@ -81,9 +81,9 @@ export async function POST(
       });
 
       const allItems = [
-        ...(pkg.features || []).map((f, i) => ({ ...f, orderIndex: i })),
-        ...(pkg.bugFixes || []).map((b, i) => ({ ...b, orderIndex: i })),
-        ...(pkg.changedBehavior || []).map((c, i) => ({ ...c, orderIndex: i })),
+        ...(pkg.features || []).map((f: any, i: number) => ({ ...f, orderIndex: i })),
+        ...(pkg.bugFixes || []).map((b: any, i: number) => ({ ...b, orderIndex: i })),
+        ...(pkg.changedBehavior || []).map((c: any, i: number) => ({ ...c, orderIndex: i })),
       ];
 
       for (const item of allItems) {

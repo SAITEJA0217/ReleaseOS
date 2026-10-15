@@ -42,7 +42,7 @@ export async function GET(
       return NextResponse.json({ error: 'Release not found' }, { status: 404 });
     }
 
-    const currentVersionRecord = release.versions.find((v) => v.version === release.currentVersion) || release.versions[0];
+    const currentVersionRecord = release.versions.find((v: any) => v.version === release.currentVersion) || release.versions[0];
     const latestBrief = release.generatedBriefs[0];
 
     if (!latestBrief || !currentVersionRecord) {
@@ -55,7 +55,7 @@ export async function GET(
     const unresolvedStatements: any[] = [];
     const reviewersSet = new Set<string>();
 
-    for (const stmt of latestBrief.statements) {
+    for (const stmt of (latestBrief.statements as any[])) {
       const latestDecision = stmt.reviewDecisions[0];
 
       if (latestDecision?.decision === 'APPROVED' || latestDecision?.decision === 'EDITED') {
@@ -76,7 +76,7 @@ export async function GET(
           staleReason: stmt.staleReason,
           sourceItemIds: JSON.parse(stmt.sourceItemIds || '[]'),
           currentStatus: latestDecision.decision,
-          evidenceReferences: stmt.evidenceReferences.map((r) => ({
+          evidenceReferences: stmt.evidenceReferences.map((r: any) => ({
             id: r.id,
             sourceId: r.sourceId,
             sourceType: r.sourceType,
@@ -102,12 +102,12 @@ export async function GET(
     }
 
     const exclusionsAndUnresolved = [
-      ...rejectedStatements.map((r) => `[REJECTED EXCLUSION] "${r.text}" — Reason: ${r.reason}`),
-      ...unresolvedStatements.map((u) => `[UNRESOLVED EXCLUSION] "${u.text}" — Excluded because human review has not been completed.`),
+      ...rejectedStatements.map((r: any) => `[REJECTED EXCLUSION] "${r.text}" — Reason: ${r.reason}`),
+      ...unresolvedStatements.map((u: any) => `[UNRESOLVED EXCLUSION] "${u.text}" — Excluded because human review has not been completed.`),
     ];
 
-    const techApproved = approvedStatements.filter((s) => s.audience === 'TECHNICAL');
-    const stakeholderApproved = approvedStatements.filter((s) => s.audience === 'STAKEHOLDER');
+    const techApproved = approvedStatements.filter((s: any) => s.audience === 'TECHNICAL');
+    const stakeholderApproved = approvedStatements.filter((s: any) => s.audience === 'STAKEHOLDER');
 
     const reviewStatus: 'FULLY_REVIEWED' | 'PARTIALLY_REVIEWED' | 'REJECTED' =
       unresolvedStatements.length === 0 && approvedStatements.length > 0
@@ -133,7 +133,7 @@ export async function GET(
         summary: latestBrief.stakeholderSummary,
         approvedStatements: stakeholderApproved,
       },
-      qaSummary: currentVersionRecord.qaEvidence.map((q) => ({
+      qaSummary: currentVersionRecord.qaEvidence.map((q: any) => ({
         id: q.id,
         testType: q.testType,
         summary: q.summary,

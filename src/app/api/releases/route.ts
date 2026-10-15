@@ -35,7 +35,7 @@ export async function GET() {
     });
 
     // Compute live dashboard metrics for each release
-    const data = releases.map((rel) => {
+    const data = releases.map((rel: any) => {
       const latestVersion = rel.versions[0];
       const latestBrief = rel.generatedBriefs[0];
 
@@ -63,9 +63,9 @@ export async function GET() {
         ? validateRequiredSections({
             name: rel.name,
             version: latestVersion.version,
-            features: latestVersion.items.filter((i) => i.category === 'FEATURE'),
-            bugFixes: latestVersion.items.filter((i) => i.category === 'BUG_FIX'),
-            changedBehavior: latestVersion.items.filter((i) => i.category === 'CHANGED_BEHAVIOR'),
+            features: latestVersion.items.filter((i: any) => i.category === 'FEATURE'),
+            bugFixes: latestVersion.items.filter((i: any) => i.category === 'BUG_FIX'),
+            changedBehavior: latestVersion.items.filter((i: any) => i.category === 'CHANGED_BEHAVIOR'),
             qaEvidence: latestVersion.qaEvidence,
             knownLimitations: latestVersion.limitations,
             migrationNotes: latestVersion.migrationNotes,
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     const packageFingerprint = computePackageFingerprint(pkg);
 
     // Save Release, initial ReleaseVersion, items, QA evidence, and AuditEvent in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result: any = await prisma.$transaction(async (tx: any) => {
       const release = await tx.release.create({
         data: {
           name: pkg.name,
@@ -141,9 +141,9 @@ export async function POST(req: NextRequest) {
 
       // Prepare items
       const allItems = [
-        ...(pkg.features || []).map((f, i) => ({ ...f, orderIndex: i })),
-        ...(pkg.bugFixes || []).map((b, i) => ({ ...b, orderIndex: i })),
-        ...(pkg.changedBehavior || []).map((c, i) => ({ ...c, orderIndex: i })),
+        ...(pkg.features || []).map((f: any, i: number) => ({ ...f, orderIndex: i })),
+        ...(pkg.bugFixes || []).map((b: any, i: number) => ({ ...b, orderIndex: i })),
+        ...(pkg.changedBehavior || []).map((c: any, i: number) => ({ ...c, orderIndex: i })),
       ];
 
       for (const item of allItems) {

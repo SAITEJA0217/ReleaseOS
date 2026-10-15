@@ -39,8 +39,8 @@ export async function POST(
     }
 
     const currentVersion =
-      release.versions.find((v) => v.id === latestBrief.versionId) ||
-      release.versions.find((v) => v.version === release.currentVersion) ||
+      release.versions.find((v: any) => v.id === latestBrief.versionId) ||
+      release.versions.find((v: any) => v.version === release.currentVersion) ||
       release.versions[0];
 
     if (!currentVersion) {
@@ -65,7 +65,7 @@ export async function POST(
     }
 
     const checks = detectStaleStatements(
-      latestBrief.statements.map((s) => ({
+      latestBrief.statements.map((s: any) => ({
         id: s.id,
         statementText: s.statementText,
         sourceItemIds: JSON.parse(s.sourceItemIds || '[]'),
@@ -75,7 +75,7 @@ export async function POST(
     );
 
     let staleCount = 0;
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       for (const check of checks) {
         if (check.isStale) {
           staleCount++;

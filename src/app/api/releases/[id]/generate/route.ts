@@ -26,7 +26,7 @@ export async function POST(
       return NextResponse.json({ error: 'Release not found' }, { status: 404 });
     }
 
-    const currentVersionRecord = release.versions.find((v) => v.version === release.currentVersion) || release.versions[0];
+    const currentVersionRecord = release.versions.find((v: any) => v.version === release.currentVersion) || release.versions[0];
     if (!currentVersionRecord) {
       return NextResponse.json({ error: 'No release version snapshot available to generate from' }, { status: 400 });
     }
@@ -36,8 +36,8 @@ export async function POST(
       name: release.name,
       version: currentVersionRecord.version,
       features: currentVersionRecord.items
-        .filter((i) => i.category === 'FEATURE')
-        .map((f) => ({
+        .filter((i: any) => i.category === 'FEATURE')
+        .map((f: any) => ({
           id: f.id,
           category: 'FEATURE' as const,
           title: f.title,
@@ -45,8 +45,8 @@ export async function POST(
           sourceReference: f.sourceReference,
         })),
       bugFixes: currentVersionRecord.items
-        .filter((i) => i.category === 'BUG_FIX')
-        .map((b) => ({
+        .filter((i: any) => i.category === 'BUG_FIX')
+        .map((b: any) => ({
           id: b.id,
           category: 'BUG_FIX' as const,
           title: b.title,
@@ -54,15 +54,15 @@ export async function POST(
           sourceReference: b.sourceReference,
         })),
       changedBehavior: currentVersionRecord.items
-        .filter((i) => i.category === 'CHANGED_BEHAVIOR')
-        .map((c) => ({
+        .filter((i: any) => i.category === 'CHANGED_BEHAVIOR')
+        .map((c: any) => ({
           id: c.id,
           category: 'CHANGED_BEHAVIOR' as const,
           title: c.title,
           description: c.description,
           sourceReference: c.sourceReference,
         })),
-      qaEvidence: currentVersionRecord.qaEvidence.map((q) => ({
+      qaEvidence: currentVersionRecord.qaEvidence.map((q: any) => ({
         id: q.id,
         testType: q.testType,
         summary: q.summary,
@@ -89,7 +89,7 @@ export async function POST(
         stakeholderSummary: generationResult.stakeholderSummary,
         diagnosticLogs: JSON.stringify(generationResult.diagnosticLogs),
         statements: {
-          create: generationResult.statements.map((stmt) => ({
+          create: generationResult.statements.map((stmt: any) => ({
             statementText: stmt.statementText,
             audience: stmt.audience,
             impactCategory: stmt.impactCategory,
@@ -99,7 +99,7 @@ export async function POST(
             sourceItemIds: JSON.stringify(stmt.sourceItemIds),
             sourceFingerprintsSnapshot: JSON.stringify(stmt.sourceFingerprintsSnapshot),
             evidenceReferences: {
-              create: stmt.evidenceExcerpts.map((ref) => ({
+              create: stmt.evidenceExcerpts.map((ref: any) => ({
                 sourceId: ref.sourceId,
                 sourceType: ref.sourceType,
                 excerpt: ref.excerpt,

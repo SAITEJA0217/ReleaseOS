@@ -35,7 +35,7 @@ export async function POST(
       return NextResponse.json({ error: 'Statement not found for this release' }, { status: 404 });
     }
 
-    const reviewRecord = await prisma.$transaction(async (tx) => {
+    const reviewRecord = await prisma.$transaction(async (tx: any) => {
       // Create new review decision record to preserve historical decisions
       const record = await tx.reviewDecision.create({
         data: {

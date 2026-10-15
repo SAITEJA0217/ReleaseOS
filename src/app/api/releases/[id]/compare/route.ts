@@ -33,8 +33,8 @@ export async function GET(
       },
     });
 
-    const baseRecord = versions.find((v) => v.version === baseVersion);
-    const targetRecord = versions.find((v) => v.version === targetVersion);
+    const baseRecord = versions.find((v: any) => v.version === baseVersion);
+    const targetRecord = versions.find((v: any) => v.version === targetVersion);
 
     if (!baseRecord) {
       return NextResponse.json({ error: `Base version "${baseVersion}" not found.` }, { status: 404 });
@@ -49,7 +49,7 @@ export async function GET(
       limitations: baseRecord.limitations,
       migrationNotes: baseRecord.migrationNotes,
       affectedUserGroups: baseRecord.affectedUserGroups,
-      items: baseRecord.items.map((i) => ({
+      items: baseRecord.items.map((i: any) => ({
         id: i.id,
         category: i.category,
         title: i.title,
@@ -57,7 +57,7 @@ export async function GET(
         sourceReference: i.sourceReference,
         contentFingerprint: i.contentFingerprint,
       })),
-      qaEvidence: baseRecord.qaEvidence.map((q) => ({
+      qaEvidence: baseRecord.qaEvidence.map((q: any) => ({
         id: q.id,
         testType: q.testType,
         summary: q.summary,
@@ -74,7 +74,7 @@ export async function GET(
       limitations: targetRecord.limitations,
       migrationNotes: targetRecord.migrationNotes,
       affectedUserGroups: targetRecord.affectedUserGroups,
-      items: targetRecord.items.map((i) => ({
+      items: targetRecord.items.map((i: any) => ({
         id: i.id,
         category: i.category,
         title: i.title,
@@ -82,7 +82,7 @@ export async function GET(
         sourceReference: i.sourceReference,
         contentFingerprint: i.contentFingerprint,
       })),
-      qaEvidence: targetRecord.qaEvidence.map((q) => ({
+      qaEvidence: targetRecord.qaEvidence.map((q: any) => ({
         id: q.id,
         testType: q.testType,
         summary: q.summary,
